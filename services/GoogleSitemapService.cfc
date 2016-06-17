@@ -42,6 +42,7 @@ component {
 		googleSitemap.xmlRoot = xmlElemNew( googleSitemap, "urlset" );
 		googleSitemap.xmlRoot.XmlAttributes.xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"
 
+		arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" );
 		for ( var page in arguments.pages ){
 			var elemUrl        = xmlElemNew( googleSitemap, "url"        );
 			var elemLoc        = XmlElemNew( googleSitemap, "loc"        );
@@ -57,6 +58,10 @@ component {
 			elemUrl.XmlChildren.append( elemChangeFreq );
 
 			googleSitemap.xmlRoot.XmlChildren[counter++] = elemUrl;
+
+			if( counter % 100 == 0 ){
+				arguments.logger.info( "Processed 100 pages..." );
+			}
 		}
 
 		try{
