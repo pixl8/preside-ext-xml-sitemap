@@ -38,9 +38,14 @@ component {
 	private function _buildSitemapFile( required array pages, any logger ) {
 		var counter       = 1;
 		var googleSitemap = xmlNew();
+		var haveLogger    = arguments.keyExists( "logger" );
+		var canInfo       = haveLogger && arguments.logger.canInfo();
+		var canError      = haveLogger && arguments.logger.canError();
 
 		googleSitemap.xmlRoot = xmlElemNew( googleSitemap, "urlset" );
 		googleSitemap.xmlRoot.XmlAttributes.xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"
+
+		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
 		for ( var page in arguments.pages ){
 			var elemUrl        = xmlElemNew( googleSitemap, "url"        );
@@ -57,16 +62,20 @@ component {
 			elemUrl.XmlChildren.append( elemChangeFreq );
 
 			googleSitemap.xmlRoot.XmlChildren[counter++] = elemUrl;
+
+			if( counter % 100 == 0 ){
+				if ( canInfo ) { arguments.logger.info( "Processed 100 pages..." ); }
+			}
 		}
 
 		try{
 			FileWrite( expandPath('/sitemap.xml'), googleSitemap );
 		} catch ( e ){
-			arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#].");
+			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
 		}
 
-		arguments.logger.info( "Successfully created sitemap.xml." );
+		if ( canInfo ) { arguments.logger.info( "Successfully created sitemap.xml." ); }
 		return true;
 	}
 
