@@ -26,3 +26,14 @@ From the root of your application, type the following command:
 From the root of your application, type the following command:
 
 	box install pixl8/preside-ext-xml-sitemap#v1.1.0
+
+## Making your sitemap available to Google
+There are two different ways to make your sitemap available to Google:
+
+* [Submit it to Google using the Search Console Sitemaps tool](https://www.google.com/webmasters/tools/sitemap-list)
+
+*OR*
+
+* Insert the following line anywhere in your robots.txt file, specifying the path to your sitemap:
+
+	`Sitemap: http://mydomain.com/sitemap.xml`
