@@ -38,6 +38,7 @@ component {
 	private function _buildSitemapFile( required array pages, any logger ) {
 		var counter       = 1;
 		var googleSitemap = xmlNew();
+		var xmlSitemap    = "";
 		var haveLogger    = arguments.keyExists( "logger" );
 		var canInfo       = haveLogger && arguments.logger.canInfo();
 		var canError      = haveLogger && arguments.logger.canError();
@@ -69,7 +70,8 @@ component {
 		}
 
 		try{
-			FileWrite( expandPath('/sitemap.xml'), googleSitemap );
+			xmlSitemap = IsSimpleValue( googleSitemap ) ? googleSiteMap : ToString( googleSiteMap );
+			FileWrite( expandPath('/sitemap.xml'), xmlSitemap );
 		} catch ( e ){
 			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
