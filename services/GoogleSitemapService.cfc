@@ -38,6 +38,7 @@ component {
 	private function _buildSitemapFile( required array pages, any logger ) {
 		var counter       = 1;
 		var googleSitemap = xmlNew();
+		var xmlSitemap    = "";
 		var haveLogger    = arguments.keyExists( "logger" );
 		var canInfo       = haveLogger && arguments.logger.canInfo();
 		var canError      = haveLogger && arguments.logger.canError();
@@ -50,15 +51,15 @@ component {
 		for ( var page in arguments.pages ){
 			var elemUrl        = xmlElemNew( googleSitemap, "url"        );
 			var elemLoc        = XmlElemNew( googleSitemap, "loc"        );
-			var elemLsatMod    = XmlElemNew( googleSitemap, "lastmod"    );
+			var elemLastMod    = XmlElemNew( googleSitemap, "lastmod"    );
 			var elemChangeFreq = XmlElemNew( googleSitemap, "changefreq" );
 
 			elemLoc.XmlText        = _getRequestContext().buildLink( page=page.id );
-			elemLsatMod.XmlText    = DateFormat( page.datemodified, "yyyy-mm-dd" );
+			elemLastMod.XmlText    = DateFormat( page.datemodified, "yyyy-mm-dd" );
 			elemChangeFreq.XmlText = "always";
 
 			elemUrl.XmlChildren.append( elemLoc        );
-			elemUrl.XmlChildren.append( elemLsatMod    );
+			elemUrl.XmlChildren.append( elemLastMod    );
 			elemUrl.XmlChildren.append( elemChangeFreq );
 
 			googleSitemap.xmlRoot.XmlChildren[counter++] = elemUrl;
@@ -69,7 +70,8 @@ component {
 		}
 
 		try{
-			FileWrite( expandPath('/sitemap.xml'), googleSitemap );
+			xmlSitemap = IsSimpleValue( googleSitemap ) ? googleSiteMap : ToString( googleSiteMap );
+			FileWrite( expandPath('/sitemap.xml'), xmlSitemap );
 		} catch ( e ){
 			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
