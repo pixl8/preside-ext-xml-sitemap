@@ -1,6 +1,6 @@
 component extends="preside.system.services.siteTree.SiteTreeService" {
 
-	public any function getAllPagesInTree(
+	public any function getPagesForSiteMap(
 		  boolean trash        = false
 		, array   selectFields = []
 		, string  format       = "query"

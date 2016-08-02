@@ -52,7 +52,7 @@ component {
 			}
 
 			if( page.hasChildren ){
-				_getHaveAccessPages( haveAccessPages=haveAccessPages, childPage=page.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction );
+				_addChildPages( haveAccessPages=haveAccessPages, childPages=page.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction );
 			}
 		}
 
@@ -129,7 +129,7 @@ component {
 		};
 	}
 
-	private function _getHaveAccessPages( required array haveAccessPages, required array childPage, string parentSearchEngineAccess, string parentAccessRestriction ) {
+	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction ) {
 
 		for( var currentChildPage in arguments.childPage ){
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
@@ -140,7 +140,7 @@ component {
 			}
 
 			if( currentChildPage.hasChildren ){
-				_getHaveAccessPages( haveAccessPages=arguments.haveAccessPages, childPage=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
+				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPage=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
 			}
 		}
 
