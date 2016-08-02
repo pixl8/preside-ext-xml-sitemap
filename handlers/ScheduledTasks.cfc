@@ -11,6 +11,6 @@ component {
      * @timeout  7200
      */
     private boolean function rebuildSitemap( event, rc, prc, logger ) {
-        return googleSitemapService.rebuildSitemap( logger=arguments.logger ?: NullValue() );
+        return googleSitemapService.rebuildSitemap( event=event, logger=arguments.logger ?: NullValue() );
     }
 }
