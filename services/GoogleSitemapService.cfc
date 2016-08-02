@@ -16,7 +16,7 @@ component {
 
 	public boolean function rebuildSitemap( any event, any logger ) {
 		var haveAccessPages = [];
-		var pages           = _getSiteTreeService().getAllPagesInTree(
+		var pages           = _getSiteTreeService().getPagesForSiteMap(
 			selectFields  = [
 				  "page.id"
 				, "page.slug"
@@ -131,7 +131,7 @@ component {
 
 	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction ) {
 
-		for( var currentChildPage in arguments.childPage ){
+		for( var currentChildPage in arguments.childPages ){
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
 			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
 
@@ -140,7 +140,7 @@ component {
 			}
 
 			if( currentChildPage.hasChildren ){
-				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPage=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
+				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPages=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
 			}
 		}
 
