@@ -14,7 +14,7 @@ component {
 		return this;
 	}
 
-	public boolean function rebuildSitemap( event, any logger ) {
+	public boolean function rebuildSitemap( any event, any logger ) {
 		var haveAccessPages = [];
 		var pages           = _getSiteTreeService().getAllPagesInTree(
 			selectFields  = [
