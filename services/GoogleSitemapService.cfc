@@ -29,10 +29,14 @@ component {
 				, "page.exclude_from_sitemap"
 				, "page.embargo_date"
 				, "page.expiry_date"
+				, "page.parent_page"
 			]
 			, allowDrafts = false
 			, format      = "nestedArray"
-		)
+		);
+
+		var inheritedSearchEngineRules     = {};
+		var inheritedpageAccessRestriction = {};
 
 		for( var page in pages ){
 			var livePage              = checkLivePage( active=page.active, trashed=page.trashed, exclude_from_sitemap=page.exclude_from_sitemap, embargo_date=page.embargo_date, expiry_date=page.expiry_date );
@@ -40,11 +44,21 @@ component {
 			var pageAccessRestriction = page.access_restriction   ?: "";
 
 			if( page.search_engine_access=="inherit" ){
-				pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
+				if( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ){
+					pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
+					inheritedSearchEngineRules[ page.parent_page ] = pageSearchEngineRule;
+				}else{
+					pageSearchEngineRule = inheritedSearchEngineRules[ page.parent_page ];
+				}
 			}
 
 			if( page.access_restriction=="inherit" ){
-				pageAccessRestriction = _getSiteTreeService().getAccessRestrictionRulesForPage( page.id ).access_restriction;
+				if( !structKeyExists( inheritedpageAccessRestriction, page.parent_page ) ){
+					pageAccessRestriction = _getSiteTreeService().getAccessRestrictionRulesForPage( page.id ).access_restriction;
+					inheritedpageAccessRestriction[ page.parent_page ] = pageAccessRestriction;
+				}else{
+					pageAccessRestriction = inheritedpageAccessRestriction[ page.parent_page ];
+				}
 			}
 
 			if( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ){
