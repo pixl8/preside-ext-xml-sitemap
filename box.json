@@ -10,7 +10,7 @@
         "type":"git",
         "URL":"https://pixl8.beanstalkapp.com/preside-ext-xml-sitemap"
     },
-    "slug":"preside-ext-xml-sitemap",
+    "slug":"preside-ext-sitemap",
     "type":"preside-extensions",
     "projectURL":"",
     "ignore":[
@@ -19,5 +19,7 @@
         ".twgit_features_subject",
 	".travis.yml",
 	"jmimemagic.log"
-    ]
+    ],
+    "devDependencies":{
+    }
 }
