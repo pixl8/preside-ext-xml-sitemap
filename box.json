@@ -1,7 +1,7 @@
 {
     "name":"PresideCMS Extension: XML Sitemap",
-    "version":"1.0.7",
-    "location":"https://github.com/pixl8/preside-ext-xml-sitemap/archive/v1.0.7.zip",
+    "version":"1.0.8",
+    "location":"https://github.com/pixl8/preside-ext-xml-sitemap/archive/v1.0.8.zip",
     "author":"Pixl8 Interactive",
     "directory":"application/extensions",
     "homepage":"",
