@@ -148,8 +148,9 @@ component {
 		for( var currentChildPage in arguments.childPages ){
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
 			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
+			var livePage                   = checkLivePage( active=currentChildPage.active, trashed=currentChildPage.trashed, exclude_from_sitemap=currentChildPage.exclude_from_sitemap, embargo_date=currentChildPage.embargo_date, expiry_date=currentChildPage.expiry_date );
 
-			if( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" ){
+			if( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" && livePage ){
 				arguments.haveAccessPages.append( currentChildPage );
 			}
 
@@ -172,7 +173,7 @@ component {
 			return false;
 		}
 
-		if( ( !Len( arguments.embargo_date ) OR now() GT arguments.embargo_date ) AND ( !Len( arguments.expiry_date ) OR now() LT arguments.expiry_date ) ){
+		if( ( isDate( arguments.embargo_date ?: "" ) && arguments.embargo_date GT now() ) || ( isDate( arguments.expiry_date ?: "" ) && arguments.expiry_date LT now() ) ){
 			return false;
 		}
 
