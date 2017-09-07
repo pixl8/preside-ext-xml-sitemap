@@ -29,10 +29,14 @@ component {
 				, "page.exclude_from_sitemap"
 				, "page.embargo_date"
 				, "page.expiry_date"
+				, "page.parent_page"
 			]
 			, allowDrafts = false
 			, format      = "nestedArray"
-		)
+		);
+
+		var inheritedSearchEngineRules     = {};
+		var inheritedpageAccessRestriction = {};
 
 		for( var page in pages ){
 			var livePage              = checkLivePage( active=page.active, trashed=page.trashed, exclude_from_sitemap=page.exclude_from_sitemap, embargo_date=page.embargo_date, expiry_date=page.expiry_date );
@@ -40,11 +44,21 @@ component {
 			var pageAccessRestriction = page.access_restriction   ?: "";
 
 			if( page.search_engine_access=="inherit" ){
-				pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
+				if( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ){
+					pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
+					inheritedSearchEngineRules[ page.parent_page ] = pageSearchEngineRule;
+				}else{
+					pageSearchEngineRule = inheritedSearchEngineRules[ page.parent_page ];
+				}
 			}
 
 			if( page.access_restriction=="inherit" ){
-				pageAccessRestriction = _getSiteTreeService().getAccessRestrictionRulesForPage( page.id ).access_restriction;
+				if( !structKeyExists( inheritedpageAccessRestriction, page.parent_page ) ){
+					pageAccessRestriction = _getSiteTreeService().getAccessRestrictionRulesForPage( page.id ).access_restriction;
+					inheritedpageAccessRestriction[ page.parent_page ] = pageAccessRestriction;
+				}else{
+					pageAccessRestriction = inheritedpageAccessRestriction[ page.parent_page ];
+				}
 			}
 
 			if( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ){
@@ -134,8 +148,9 @@ component {
 		for( var currentChildPage in arguments.childPages ){
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
 			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
+			var livePage                   = checkLivePage( active=currentChildPage.active, trashed=currentChildPage.trashed, exclude_from_sitemap=currentChildPage.exclude_from_sitemap, embargo_date=currentChildPage.embargo_date, expiry_date=currentChildPage.expiry_date );
 
-			if( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" ){
+			if( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" && livePage ){
 				arguments.haveAccessPages.append( currentChildPage );
 			}
 
@@ -158,7 +173,7 @@ component {
 			return false;
 		}
 
-		if( ( !Len( arguments.embargo_date ) OR now() GT arguments.embargo_date ) AND ( !Len( arguments.expiry_date ) OR now() LT arguments.expiry_date ) ){
+		if( ( isDate( arguments.embargo_date ?: "" ) && arguments.embargo_date GT now() ) || ( isDate( arguments.expiry_date ?: "" ) && arguments.expiry_date LT now() ) ){
 			return false;
 		}
 
