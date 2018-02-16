@@ -9,7 +9,7 @@ component {
 	 */
 
 	public function init( required any siteTreeService ) output=false{
-		_setSiteTreeService(   arguments.siteTreeService     );
+		_setSiteTreeService( arguments.siteTreeService );
 
 		return this;
 	}
@@ -38,34 +38,34 @@ component {
 		var inheritedSearchEngineRules     = {};
 		var inheritedpageAccessRestriction = {};
 
-		for( var page in pages ){
+		for( var page in pages ) {
 			var livePage              = checkLivePage( active=page.active, trashed=page.trashed, exclude_from_sitemap=page.exclude_from_sitemap, embargo_date=page.embargo_date, expiry_date=page.expiry_date );
 			var pageSearchEngineRule  = page.search_engine_access ?: "";
 			var pageAccessRestriction = page.access_restriction   ?: "";
 
-			if( page.search_engine_access=="inherit" ){
-				if( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ){
+			if ( page.search_engine_access=="inherit" ) {
+				if ( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ) {
 					pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
 					inheritedSearchEngineRules[ page.parent_page ] = pageSearchEngineRule;
-				}else{
+				} else {
 					pageSearchEngineRule = inheritedSearchEngineRules[ page.parent_page ];
 				}
 			}
 
-			if( page.access_restriction=="inherit" ){
-				if( !structKeyExists( inheritedpageAccessRestriction, page.parent_page ) ){
+			if ( page.access_restriction=="inherit" ) {
+				if ( !structKeyExists( inheritedpageAccessRestriction, page.parent_page ) ) {
 					pageAccessRestriction = _getSiteTreeService().getAccessRestrictionRulesForPage( page.id ).access_restriction;
 					inheritedpageAccessRestriction[ page.parent_page ] = pageAccessRestriction;
-				}else{
+				} else {
 					pageAccessRestriction = inheritedpageAccessRestriction[ page.parent_page ];
 				}
 			}
 
-			if( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ){
+			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
 				haveAccessPages.append( page );
 			}
 
-			if( page.hasChildren ){
+			if ( page.hasChildren ) {
 				_addChildPages( haveAccessPages=haveAccessPages, childPages=page.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction );
 			}
 		}
@@ -87,13 +87,13 @@ component {
 
 		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
-		for ( var page in arguments.pages ){
+		for ( var page in arguments.pages ) {
 			var elemUrl        = xmlElemNew( googleSitemap, "url"        );
 			var elemLoc        = XmlElemNew( googleSitemap, "loc"        );
 			var elemLastMod    = XmlElemNew( googleSitemap, "lastmod"    );
 			var elemChangeFreq = XmlElemNew( googleSitemap, "changefreq" );
 
-			elemLoc.XmlText        = siteRootUrl.reReplace("/$", "") & page._hierarchy_slug.reReplace("/$", ".html");
+			elemLoc.XmlText        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "/$", ".html" );
 			elemLastMod.XmlText    = DateFormat( page.datemodified, "yyyy-mm-dd" );
 			elemChangeFreq.XmlText = "always";
 
@@ -101,17 +101,17 @@ component {
 			elemUrl.XmlChildren.append( elemLastMod    );
 			elemUrl.XmlChildren.append( elemChangeFreq );
 
-			googleSitemap.xmlRoot.XmlChildren[counter++] = elemUrl;
+			googleSitemap.xmlRoot.XmlChildren[ counter++ ] = elemUrl;
 
-			if( counter % 100 == 0 ){
+			if ( counter % 100 == 0 ) {
 				if ( canInfo ) { arguments.logger.info( "Processed 100 pages..." ); }
 			}
 		}
 
-		try{
+		try {
 			xmlSitemap = IsSimpleValue( googleSitemap ) ? googleSiteMap : ToString( googleSiteMap );
 			FileWrite( expandPath('/sitemap.xml'), xmlSitemap );
-		} catch ( e ){
+		} catch ( e ) {
 			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
 		}
@@ -145,7 +145,8 @@ component {
 
 	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction ) {
 
-		for( var currentChildPage in arguments.childPages ){
+		for( var currentChildPage in arguments.childPages ) {
+			var currentLivePage            = checkLivePage( active=currentChildPage.active, trashed=currentChildPage.trashed, exclude_from_sitemap=currentChildPage.exclude_from_sitemap, embargo_date=currentChildPage.embargo_date, expiry_date=currentChildPage.expiry_date );
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
 			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
 
@@ -153,7 +154,7 @@ component {
 				arguments.haveAccessPages.append( currentChildPage );
 			}
 
-			if( currentChildPage.hasChildren ){
+			if ( currentChildPage.hasChildren ) {
 				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPages=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
 			}
 		}
@@ -167,8 +168,7 @@ component {
 		, string embargo_date
 		, string expiry_date
 	) {
-
-		if( arguments.active == 0 || arguments.trashed == "1" || arguments.exclude_from_sitemap == "1" ){
+		if ( arguments.active == 0 || arguments.trashed == "1" || arguments.exclude_from_sitemap == "1" ) {
 			return false;
 		}
 
