@@ -172,7 +172,7 @@ component {
 			return false;
 		}
 
-		if( ( !Len( arguments.embargo_date ) OR now() GT arguments.embargo_date ) AND ( !Len( arguments.expiry_date ) OR now() LT arguments.expiry_date ) ){
+		if ( ( isDate( arguments.embargo_date ) && now() < arguments.embargo_date ) || ( isDate( arguments.expiry_date ) && now() > arguments.expiry_date ) ) {
 			return false;
 		}
 
