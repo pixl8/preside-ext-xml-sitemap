@@ -149,7 +149,7 @@ component {
 			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
 			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
 
-			if( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" ){
+			if ( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" && currentLivePage ) {
 				arguments.haveAccessPages.append( currentChildPage );
 			}
 
