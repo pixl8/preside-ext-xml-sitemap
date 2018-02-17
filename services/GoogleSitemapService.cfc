@@ -96,7 +96,7 @@ component {
 			var elemLastMod    = XmlElemNew( googleSitemap, "lastmod"    );
 			var elemChangeFreq = XmlElemNew( googleSitemap, "changefreq" );
 
-			elemLoc.XmlText        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "/$", ".html" );
+			elemLoc.XmlText        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
 			elemLastMod.XmlText    = DateFormat( page.datemodified, "yyyy-mm-dd" );
 			elemChangeFreq.XmlText = "always";
 
