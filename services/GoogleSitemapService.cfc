@@ -33,6 +33,7 @@ component {
 			]
 			, allowDrafts = false
 			, format      = "nestedArray"
+			, useCache    = false
 		);
 
 		var inheritedSearchEngineRules     = {};
