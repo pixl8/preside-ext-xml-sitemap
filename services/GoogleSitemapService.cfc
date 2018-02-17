@@ -37,11 +37,14 @@ component {
 
 		var inheritedSearchEngineRules     = {};
 		var inheritedpageAccessRestriction = {};
+		var livePage                       = false;
+		var pageSearchEngineRule           = "";
+		var pageAccessRestriction          = "";
 
 		for( var page in pages ) {
-			var livePage              = checkLivePage( active=page.active, trashed=page.trashed, exclude_from_sitemap=page.exclude_from_sitemap, embargo_date=page.embargo_date, expiry_date=page.expiry_date );
-			var pageSearchEngineRule  = page.search_engine_access ?: "";
-			var pageAccessRestriction = page.access_restriction   ?: "";
+			livePage              = _checkLivePage( active=page.active, trashed=page.trashed, exclude_from_sitemap=page.exclude_from_sitemap, embargo_date=page.embargo_date, expiry_date=page.expiry_date );
+			pageSearchEngineRule  = page.search_engine_access ?: "";
+			pageAccessRestriction = page.access_restriction   ?: "";
 
 			if ( page.search_engine_access=="inherit" ) {
 				if ( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ) {
@@ -144,24 +147,26 @@ component {
 	}
 
 	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction ) {
+		var livePage              = false;
+		var pageSearchEngineRule  = "";
+		var pageAccessRestriction = "";
 
-		for( var currentChildPage in arguments.childPages ) {
-			var currentLivePage            = checkLivePage( active=currentChildPage.active, trashed=currentChildPage.trashed, exclude_from_sitemap=currentChildPage.exclude_from_sitemap, embargo_date=currentChildPage.embargo_date, expiry_date=currentChildPage.expiry_date );
-			var currentSearchEngineAccess  = currentChildPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : currentChildPage.search_engine_access;
-			var currentAccessRestriction   = currentChildPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : currentChildPage.access_restriction;
+		for( var childPage in arguments.childPages ) {
+			livePage           = _checkLivePage( active=childPage.active, trashed=childPage.trashed, exclude_from_sitemap=childPage.exclude_from_sitemap, embargo_date=childPage.embargo_date, expiry_date=childPage.expiry_date );
+			pageSearchEngineRule = childPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : childPage.search_engine_access;
+			pageAccessRestriction  = childPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : childPage.access_restriction;
 
-			if ( currentSearchEngineAccess=="allow" && currentAccessRestriction=="none" && currentLivePage ) {
-				arguments.haveAccessPages.append( currentChildPage );
+			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
+				arguments.haveAccessPages.append( childPage );
 			}
 
-			if ( currentChildPage.hasChildren ) {
-				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPages=currentChildPage.children, parentSearchEngineAccess=currentSearchEngineAccess, parentAccessRestriction=currentAccessRestriction );
+			if ( childPage.hasChildren ) {
+				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPages=childPage.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction );
 			}
 		}
-
 	}
 
-	private boolean function checkLivePage(
+	private boolean function _checkLivePage(
 		  string active
 		, string trashed
 		, string exclude_from_sitemap
@@ -172,7 +177,10 @@ component {
 			return false;
 		}
 
-		if ( ( isDate( arguments.embargo_date ) && now() < arguments.embargo_date ) || ( isDate( arguments.expiry_date ) && now() > arguments.expiry_date ) ) {
+		var isEmbargoed = isDate( arguments.embargo_date ) && now() < arguments.embargo_date;
+		var isExpired   = isDate( arguments.expiry_date  ) && now() > arguments.expiry_date;
+
+		if ( isEmbargoed || isExpired ) {
 			return false;
 		}
 
