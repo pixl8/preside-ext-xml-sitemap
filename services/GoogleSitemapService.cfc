@@ -77,43 +77,41 @@ component {
 	}
 
 	private function _buildSitemapFile( required array pages, any logger, any event ) {
-		var counter       = 1;
-		var googleSitemap = xmlNew();
-		var xmlSitemap    = "";
-		var haveLogger    = arguments.keyExists( "logger" );
-		var canInfo       = haveLogger && arguments.logger.canInfo();
-		var canError      = haveLogger && arguments.logger.canError();
-		var siteRootUrl   = arguments.event.getSiteUrl( arguments.event.getSite().id );
-
-		googleSitemap.xmlRoot = xmlElemNew( googleSitemap, "urlset" );
-		googleSitemap.xmlRoot.XmlAttributes.xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"
+		var counter     = 1;
+		var sitemap     = createObject( "java", "java.lang.StringBuilder" ).init();
+		var haveLogger  = arguments.keyExists( "logger" );
+		var canInfo     = haveLogger && arguments.logger.canInfo();
+		var canError    = haveLogger && arguments.logger.canError();
+		var siteRootUrl = arguments.event.getSiteUrl( arguments.event.getSite().id );
+		var newline     = chr( 10 ) & chr( 13 );
+		var loc         = "";
+		var lastmod     = "";
 
 		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
+		sitemap.append( '<?xml version="1.0" encoding="UTF-8"?>' );
+		sitemap.append( newline & '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
+
 		for ( var page in arguments.pages ) {
-			var elemUrl        = xmlElemNew( googleSitemap, "url"        );
-			var elemLoc        = XmlElemNew( googleSitemap, "loc"        );
-			var elemLastMod    = XmlElemNew( googleSitemap, "lastmod"    );
-			var elemChangeFreq = XmlElemNew( googleSitemap, "changefreq" );
+			loc     = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
+			lastmod = DateFormat( page.datemodified, "yyyy-mm-dd" );
 
-			elemLoc.XmlText        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
-			elemLastMod.XmlText    = DateFormat( page.datemodified, "yyyy-mm-dd" );
-			elemChangeFreq.XmlText = "always";
+			sitemap.append( newline & "  <url>" );
+			sitemap.append( newline & "    <loc>#xmlFormat( loc )#</loc>" );
+			sitemap.append( newline & "    <lastmod>#lastmod#</lastmod>" );
+			sitemap.append( newline & "    <changefreq>always</changefreq>" );
+			sitemap.append( newline & "  </url>" );
 
-			elemUrl.XmlChildren.append( elemLoc        );
-			elemUrl.XmlChildren.append( elemLastMod    );
-			elemUrl.XmlChildren.append( elemChangeFreq );
-
-			googleSitemap.xmlRoot.XmlChildren[ counter++ ] = elemUrl;
-
+			counter++;
 			if ( counter % 100 == 0 ) {
 				if ( canInfo ) { arguments.logger.info( "Processed 100 pages..." ); }
 			}
 		}
 
+		sitemap.append( newline & "</urlset>" );
+
 		try {
-			xmlSitemap = IsSimpleValue( googleSitemap ) ? googleSiteMap : ToString( googleSiteMap );
-			FileWrite( expandPath('/sitemap.xml'), xmlSitemap );
+			FileWrite( expandPath( "/sitemap.xml" ), sitemap.toString() );
 		} catch ( e ) {
 			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
