@@ -98,6 +98,7 @@ component {
 		var newline     = chr( 10 ) & chr( 13 );
 		var loc         = "";
 		var lastmod     = "";
+		var priority    = "";
 
 		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
@@ -158,27 +159,21 @@ component {
 		};
 	}
 
-	private struct function _getSitemapPriorityForPage( required string pageId ) {
+	private string function _getSitemapPriorityForPage( required string pageId ) {
 		var page = _getSiteTreeService().getPage( id=arguments.pageId, selectFields=[ "id", "parent_page", "sitemap_priority" ] );
 
 		if ( !page.recordCount ) {
-			return {
-				sitemap_priority = "normal"
-			};
+			return "normal";
 		}
 		if ( !Len( Trim( page.sitemap_priority ?: "" ) ) || page.sitemap_priority == "inherit"   ) {
 			if ( Len( Trim( page.parent_page ) ) ) {
 				return _getSitemapPriorityForPage( page.parent_page );
 			} else {
-				return {
-					sitemap_priority = "normal"
-				};
+				return "normal";
 			}
 		}
 
-		return {
-			sitemap_priority = page.sitemap_priority
-		};
+		return page.sitemap_priority;
 	}
 
 	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction, string parentSitemapPriority ) {
