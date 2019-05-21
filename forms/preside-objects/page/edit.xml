@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<tab id="meta" sortorder="20">
+		<fieldset id="meta" sortorder="10">
+			<field sortorder="11" binding="page.sitemap_priority" />
+		</fieldset>
+	</tab>
+</form>
