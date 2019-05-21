@@ -69,7 +69,7 @@ component {
 
 			if ( page.sitemap_priority=="inherit" ) {
 				if ( !structKeyExists( inheritedPageSitemapPriority, page.parent_page ) ) {
-					page.sitemap_priority = _getSitemapPriorityForPage( page.id ).sitemap_priority;
+					page.sitemap_priority = _getSitemapPriorityForPage( page.id );
 					inheritedPageSitemapPriority[ page.parent_page ] = page.sitemap_priority;
 				} else {
 					page.sitemap_priority = inheritedPageSitemapPriority[ page.parent_page ];
