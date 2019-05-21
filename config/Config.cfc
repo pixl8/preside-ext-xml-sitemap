@@ -21,5 +21,7 @@ component {
 		var logbox              = arguments.config.logbox              ?: {};
 		var environments        = arguments.config.environments        ?: {};
 
+		settings.enum.sitemapPriority   = [ "inherit", "important", "high", "normal", "low" ];
+
 	}
 }
