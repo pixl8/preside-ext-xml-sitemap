@@ -28,6 +28,7 @@ component {
 				, "page.trashed"
 				, "page.exclude_from_sitemap"
 				, "page.sitemap_priority"
+				, "page.sitemap_change_freq"
 				, "page.embargo_date"
 				, "page.expiry_date"
 				, "page.parent_page"
@@ -40,6 +41,7 @@ component {
 		var inheritedSearchEngineRules     = {};
 		var inheritedpageAccessRestriction = {};
 		var inheritedPageSitemapPriority   = {};
+		var inheritedPageSitemapChangeFreq = {};
 		var livePage                       = false;
 		var pageSearchEngineRule           = "";
 		var pageAccessRestriction          = "";
@@ -76,12 +78,28 @@ component {
 				}
 			}
 
+			if ( page.sitemap_change_freq=="inherit" ) {
+				if ( !structKeyExists( inheritedPageSitemapChangeFreq, page.parent_page ) ) {
+					page.sitemap_change_freq = _getSitemapChangeFreqForPage( page.id );
+					inheritedPageSitemapChangeFreq[ page.parent_page ] = page.sitemap_change_freq;
+				} else {
+					page.sitemap_change_freq = inheritedPageSitemapChangeFreq[ page.parent_page ];
+				}
+			}
+
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
 				haveAccessPages.append( page );
 			}
 
 			if ( page.hasChildren ) {
-				_addChildPages( haveAccessPages=haveAccessPages, childPages=page.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction, parentSitemapPriority=page.sitemap_priority );
+				_addChildPages(
+					  haveAccessPages          = haveAccessPages
+					, childPages               = page.children
+					, parentSearchEngineAccess = pageSearchEngineRule
+					, parentAccessRestriction  = pageAccessRestriction
+					, parentSitemapPriority    = page.sitemap_priority
+					, parentSitemapChangeFreq  = page.sitemap_change_freq
+				);
 			}
 		}
 
@@ -99,6 +117,7 @@ component {
 		var loc         = "";
 		var lastmod     = "";
 		var priority    = "";
+		var changeFreq  = "";
 
 		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
@@ -106,14 +125,15 @@ component {
 		sitemap.append( newline & '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
 
 		for ( var page in arguments.pages ) {
-			loc      = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
-			lastmod  = DateFormat( page.datemodified, "yyyy-mm-dd" );
-			priority = _getPriorityRange( page.sitemap_priority );
+			loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
+			lastmod    = DateFormat( page.datemodified, "yyyy-mm-dd" );
+			priority   = _getPriorityRange( page.sitemap_priority );
+			changeFreq = Len( page.sitemap_change_freq ?: "" ) ? page.sitemap_change_freq : "always";
 
 			sitemap.append( newline & "  <url>" );
 			sitemap.append( newline & "    <loc>#xmlFormat( loc )#</loc>" );
 			sitemap.append( newline & "    <lastmod>#lastmod#</lastmod>" );
-			sitemap.append( newline & "    <changefreq>always</changefreq>" );
+			sitemap.append( newline & "    <changefreq>#changeFreq#</changefreq>" );
 			sitemap.append( newline & "    <priority>#priority#</priority>" );
 			sitemap.append( newline & "  </url>" );
 
@@ -176,23 +196,48 @@ component {
 		return page.sitemap_priority;
 	}
 
-	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction, string parentSitemapPriority ) {
+	private string function _getSitemapChangeFreqForPage( required string pageId ) {
+		var page = _getSiteTreeService().getPage( id=arguments.pageId, selectFields=[ "id", "parent_page", "sitemap_change_freq" ] );
+
+		if ( !page.recordCount ) {
+			return "always";
+		}
+		if ( !Len( Trim( page.sitemap_change_freq ?: "" ) ) || page.sitemap_change_freq == "inherit"   ) {
+			if ( Len( Trim( page.parent_page ) ) ) {
+				return _getSitemapPriorityForPage( page.parent_page );
+			} else {
+				return "always";
+			}
+		}
+
+		return page.sitemap_change_freq;
+	}
+
+	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction, string parentSitemapPriority, string parentSitemapChangeFreq ) {
 		var livePage              = false;
 		var pageSearchEngineRule  = "";
 		var pageAccessRestriction = "";
 
 		for( var childPage in arguments.childPages ) {
-			livePage                   = _checkLivePage( active=childPage.active, trashed=childPage.trashed, exclude_from_sitemap=childPage.exclude_from_sitemap, embargo_date=childPage.embargo_date, expiry_date=childPage.expiry_date );
-			pageSearchEngineRule       = childPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : childPage.search_engine_access;
-			pageAccessRestriction      = childPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : childPage.access_restriction;
-			childPage.sitemap_priority = childPage.sitemap_priority     EQ "inherit" ? arguments.parentSitemapPriority    : childPage.sitemap_priority;
+			livePage                      = _checkLivePage( active=childPage.active, trashed=childPage.trashed, exclude_from_sitemap=childPage.exclude_from_sitemap, embargo_date=childPage.embargo_date, expiry_date=childPage.expiry_date );
+			pageSearchEngineRule          = childPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : childPage.search_engine_access;
+			pageAccessRestriction         = childPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : childPage.access_restriction;
+			childPage.sitemap_priority    = childPage.sitemap_priority     EQ "inherit" ? arguments.parentSitemapPriority    : childPage.sitemap_priority;
+			childPage.sitemap_change_freq = childPage.sitemap_change_freq  EQ "inherit" ? arguments.parentSitemapChangeFreq  : childPage.sitemap_change_freq;
 
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
 				arguments.haveAccessPages.append( childPage );
 			}
 
 			if ( childPage.hasChildren ) {
-				_addChildPages( haveAccessPages=arguments.haveAccessPages, childPages=childPage.children, parentSearchEngineAccess=pageSearchEngineRule, parentAccessRestriction=pageAccessRestriction, parentSitemapPriority=childPage.sitemap_priority );
+				_addChildPages(
+					  haveAccessPages          = arguments.haveAccessPages
+					, childPages               = childPage.children
+					, parentSearchEngineAccess = pageSearchEngineRule
+					, parentAccessRestriction  = pageAccessRestriction
+					, parentSitemapPriority    = childPage.sitemap_priority
+					, parentSitemapChangeFreq  = childPage.sitemap_change_freq
+				);
 			}
 		}
 	}
