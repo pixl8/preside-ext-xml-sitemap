@@ -204,7 +204,7 @@ component {
 		}
 		if ( !Len( Trim( page.sitemap_change_freq ?: "" ) ) || page.sitemap_change_freq == "inherit"   ) {
 			if ( Len( Trim( page.parent_page ) ) ) {
-				return _getSitemapPriorityForPage( page.parent_page );
+				return _getSitemapChangeFreqForPage( page.parent_page );
 			} else {
 				return "always";
 			}
