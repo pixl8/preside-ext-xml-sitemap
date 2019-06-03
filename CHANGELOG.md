@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.1
+
+* Add ability to set sitemap changefreq on individual pages
+
 ## v1.1.0
 
 * Add ability to set sitemap priority on individual pages
