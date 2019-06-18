@@ -127,7 +127,7 @@ component {
 		for ( var page in arguments.pages ) {
 			loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
 			lastmod    = DateFormat( page.datemodified, "yyyy-mm-dd" );
-			priority   = _getPriorityRange( page.sitemap_priority );
+			priority   = _getPriorityRange( page.sitemap_priority ?: "" );
 			changeFreq = Len( page.sitemap_change_freq ?: "" ) ? page.sitemap_change_freq : "always";
 
 			sitemap.append( newline & "  <url>" );

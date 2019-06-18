@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.2
+
+* Add default value to sitemap_priority
+
 ## v1.1.1
 
 * Add ability to set sitemap changefreq on individual pages
