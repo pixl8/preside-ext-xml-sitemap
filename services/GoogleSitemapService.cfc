@@ -88,7 +88,7 @@ component {
 			}
 
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
-				haveAccessPages.append( page );
+				haveAccessPages.append( _getSitemapAttributesForPage( page ) );
 			}
 
 			if ( page.hasChildren ) {
@@ -103,16 +103,17 @@ component {
 			}
 		}
 
+		$announceInterception( "postPrepareXmlSitemapPages", { pages=haveAccessPages } );
+
 		return _buildSitemapFile( pages=haveAccessPages, logger=arguments.logger, event=arguments.event );
 	}
 
 	private function _buildSitemapFile( required array pages, any logger, any event ) {
 		var counter     = 1;
-		var sitemap     = createObject( "java", "java.lang.StringBuilder" ).init();
+		var sitemap     = [];
 		var haveLogger  = arguments.keyExists( "logger" );
 		var canInfo     = haveLogger && arguments.logger.canInfo();
 		var canError    = haveLogger && arguments.logger.canError();
-		var siteRootUrl = arguments.event.getSiteUrl( arguments.event.getSite().id );
 		var newline     = chr( 10 ) & chr( 13 );
 		var loc         = "";
 		var lastmod     = "";
@@ -122,20 +123,20 @@ component {
 		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
 		sitemap.append( '<?xml version="1.0" encoding="UTF-8"?>' );
-		sitemap.append( newline & '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
+		sitemap.append( '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
 
 		for ( var page in arguments.pages ) {
-			loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
-			lastmod    = DateFormat( page.datemodified, "yyyy-mm-dd" );
-			priority   = _getPriorityRange( page.sitemap_priority ?: "" );
-			changeFreq = Len( page.sitemap_change_freq ?: "" ) ? page.sitemap_change_freq : "always";
+			loc        = page.loc;
+			lastmod    = DateFormat( page.lastmod, "yyyy-mm-dd" );
+			priority   = _getPriorityRange( page.priority ?: "" );
+			changeFreq = Len( page.changeFreq ?: "" ) ? page.changeFreq : "always";
 
-			sitemap.append( newline & "  <url>" );
-			sitemap.append( newline & "    <loc>#xmlFormat( loc )#</loc>" );
-			sitemap.append( newline & "    <lastmod>#lastmod#</lastmod>" );
-			sitemap.append( newline & "    <changefreq>#changeFreq#</changefreq>" );
-			sitemap.append( newline & "    <priority>#priority#</priority>" );
-			sitemap.append( newline & "  </url>" );
+			sitemap.append( "  <url>" );
+			sitemap.append( "    <loc>#xmlFormat( loc )#</loc>" );
+			sitemap.append( "    <lastmod>#lastmod#</lastmod>" );
+			sitemap.append( "    <changefreq>#changeFreq#</changefreq>" );
+			sitemap.append( "    <priority>#priority#</priority>" );
+			sitemap.append( "  </url>" );
 
 			counter++;
 			if ( counter % 100 == 0 ) {
@@ -143,10 +144,10 @@ component {
 			}
 		}
 
-		sitemap.append( newline & "</urlset>" );
+		sitemap.append( "</urlset>" );
 
 		try {
-			FileWrite( expandPath( "/sitemap.xml" ), sitemap.toString() );
+			FileWrite( expandPath( "/sitemap.xml" ), sitemap.toList( newline ) );
 		} catch ( e ) {
 			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
@@ -154,6 +155,19 @@ component {
 
 		if ( canInfo ) { arguments.logger.info( "Successfully created sitemap.xml." ); }
 		return true;
+	}
+
+	private struct function _getSitemapAttributesForPage( required struct page ) {
+		var result        = {};
+		var event         = $getRequestContext();
+		var siteRootUrl   = event.getSiteUrl( event.getSite().id );
+
+		result.loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
+		result.lastmod    = page.datemodified;
+		result.priority   = page.sitemap_priority ?: "";
+		result.changeFreq = page.sitemap_change_freq ?: "";
+
+		return result;
 	}
 
 	private struct function _getSearchEngineRulesForPage( required string pageId ) {
@@ -213,7 +227,14 @@ component {
 		return page.sitemap_change_freq;
 	}
 
-	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction, string parentSitemapPriority, string parentSitemapChangeFreq ) {
+	private function _addChildPages(
+		  required array  haveAccessPages
+		, required array  childPages
+		,          string parentSearchEngineAccess
+		,          string parentAccessRestriction
+		,          string parentSitemapPriority
+		,          string parentSitemapChangeFreq
+	) {
 		var livePage              = false;
 		var pageSearchEngineRule  = "";
 		var pageAccessRestriction = "";
@@ -226,7 +247,7 @@ component {
 			childPage.sitemap_change_freq = childPage.sitemap_change_freq  EQ "inherit" ? arguments.parentSitemapChangeFreq  : childPage.sitemap_change_freq;
 
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
-				arguments.haveAccessPages.append( childPage );
+				arguments.haveAccessPages.append( _getSitemapAttributesForPage( childPage ) );
 			}
 
 			if ( childPage.hasChildren ) {

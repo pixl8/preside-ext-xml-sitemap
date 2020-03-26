@@ -3,6 +3,7 @@
 ## v1.2.0
 
 * Change build/publish process
+* Add 'postPrepareXmlSitemapPages' interception point to append custom pages to sitemap
 
 ## v1.1.2
 

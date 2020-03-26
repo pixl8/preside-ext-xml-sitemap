@@ -13,6 +13,8 @@ component {
 
 		settings.enum.sitemapPriority   = [ "inherit", "important", "high", "normal", "low" ];
 		settings.enum.sitemapChangeFreq = [ "inherit", "always", "hourly", "daily", "weekly", "monthly", "yearly", "never" ];
+
+		interceptorSettings.customInterceptionPoints.append( "postPrepareXmlSitemapPages" );
 	}
 
 }

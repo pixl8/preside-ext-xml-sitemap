@@ -27,3 +27,16 @@ There are two different ways to make your sitemap available to Google:
 * Insert the following line anywhere in your robots.txt file, specifying the path to your sitemap:
 
 	`Sitemap: http://mydomain.com/sitemap.xml`
+
+## Adding custom pages to your sitemap
+
+By default, the extension will add all the active pages from your sitetree to the sitemap.
+
+It may be that you have some custom, dynamically generated pages which you also wish to add (for example, news pages stored in a separate Preside object). There is an interception point, `postPrepareXmlSitemapPages`, which receives the array of sitemap `pages` in its `interceptData`, which is called before the pages get built as an XML sitemap file.
+
+You can use whatever logic you want in your interceptor to gather pages to append to this array. Each array item is a struct containing the following keys:
+
+* `loc` (required) - the complete URL of the page
+* `lastmod` (required) - the date the content was last modified
+* `priority` (optional) - the priority of the page; one of `important`, `high`, `normal`, `low`. Defaults to `normal`
+* `changeFreq` (optional) - how often you expect the content to change; one of `always`, `hourly`, `daily`, `weekly`, `monthly`, `yearly`, `never`. Defaults to `always`
