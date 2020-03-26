@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.0
+
+* Change build/publish process
+
 ## v1.1.2
 
 * Add default value to sitemap_priority
