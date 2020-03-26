@@ -1,6 +1,6 @@
-# PresideCMS Extension: XML Sitemap Extension
+# Preside Extension: XML Sitemap Extension
 
-This is an extension for PresideCMS that will create `sitemap.xml` for all active pages
+An extension for Preside that will create `sitemap.xml` for all active pages.
 
 ## Installation
 

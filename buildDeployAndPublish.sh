@@ -19,7 +19,7 @@ if [[ $TRAVIS_TAG == v* ]] || [[ $TRAVIS_BRANCH == release* ]] ; then
 
 	ZIP_FILE=$VERSION_NUMBER.zip
 
-	echo "Building Preside Extension: XMS Sitemap"
+	echo "Building Preside Extension: XML Sitemap"
 	echo "======================================="
 	echo "GIT Branch      : $GIT_BRANCH"
 	echo "Version number  : $VERSION_NUMBER"

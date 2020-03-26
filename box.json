@@ -1,10 +1,11 @@
 {
-    "name":"PresideCMS Extension: XML Sitemap",
+    "name":"Preside Extension: XML Sitemap",
+    "shortDescription":"An extension for Preside that will create `sitemap.xml` for all active pages",
     "version":"VERSION_NUMBER",
     "location":"https://s3.eu-west-2.amazonaws.com/pixl8-public-packages/xml-sitemap/DOWNLOAD_LOCATION",
     "author":"Pixl8 Interactive",
     "directory":"application/extensions",
-    "homepage":"",
+    "homepage":"https://github.com/pixl8/preside-ext-xml-sitemap",
     "documentation":"https://github.com/pixl8/preside-ext-xml-sitemap",
     "repository":{
         "type":"git",
