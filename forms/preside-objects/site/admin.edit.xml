@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<tab id="sitemap" sortorder="25">
+		<fieldset id="sitemap" sortorder="10">
+			<field binding="site.sitemap_exclude" sortorder="10" />
+			<field binding="site.sitemap_suffix"  sortorder="20" />
+		</fieldset>
+	</tab>
+</form>
