@@ -1,6 +1,6 @@
 {
     "name":"Preside Extension: XML Sitemap",
-    "shortDescription":"An extension for Preside that will create `sitemap.xml` for all active pages",
+    "shortDescription":"An extension for Preside that will create an XML Sitemap for all active pages",
     "version":"VERSION_NUMBER",
     "location":"https://s3.eu-west-2.amazonaws.com/pixl8-public-packages/xml-sitemap/DOWNLOAD_LOCATION",
     "author":"Pixl8 Interactive",
@@ -17,7 +17,7 @@
     "ignore":[
         ".git/*",
         ".gitignore",
-        ".twgit_features_subject"
+        ".twgit_features_subject",
         ".travis.yml",
         "jmimemagic.log"
     ],
