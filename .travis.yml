@@ -15,10 +15,6 @@ install:
 - sed -i "s/java_args='-client'/java_args='-Xmx512m -client'/" /tmp/bin/box
 jobs:
   include:
-    - stage: test
-      script:
-        - box install
-        - ./test.sh
     - stage: publish
       script:
         - pip install awscli
