@@ -5,19 +5,50 @@
 component {
 
 	/**
+	 * @siteService.inject     siteService
 	 * @siteTreeService.inject siteTreeService
 	 */
 
-	public function init( required any siteTreeService ) output=false{
+	public function init( required any siteService, required any siteTreeService ){
+		_setSiteService( arguments.siteService );
 		_setSiteTreeService( arguments.siteTreeService );
 
 		return this;
 	}
 
-	public boolean function rebuildSitemap( any event, any logger ) {
+	public boolean function rebuildSitemaps( any logger ) {
+		var haveLogger = arguments.keyExists( "logger" );
+		var canInfo    = haveLogger && arguments.logger.canInfo();
+		var canError   = haveLogger && arguments.logger.canError();
+		var sites      = _getSiteService().listSites();
+
+		for( var site in sites ) {
+			if ( $helpers.isTrue( site.sitemap_exclude ) ) {
+				if ( canInfo ) { arguments.logger.info( "Skipping sitemap for [#site.name#]" ); }
+				continue;
+			}
+
+			if ( canInfo ) { arguments.logger.info( "Building sitemap for [#site.name#]" ); }
+
+			var success = rebuildSitemap( siteId=site.id, logger=arguments.logger ?: nullValue() );
+			if ( !success ) {
+				return false;
+			}
+		}
+
+		if ( canInfo ) { arguments.logger.info( "Finished." ); }
+
+		return true;
+	}
+
+	public boolean function rebuildSitemap( required string siteId, any logger ) {
 		var haveAccessPages = [];
 		var pages           = _getSiteTreeService().getPagesForSiteMap(
-			selectFields  = [
+			  siteId       = arguments.siteId
+			, allowDrafts  = false
+			, format       = "nestedArray"
+			, useCache     = false
+			, selectFields = [
 				  "page.id"
 				, "page.slug"
 				, "page.datemodified"
@@ -33,9 +64,6 @@ component {
 				, "page.expiry_date"
 				, "page.parent_page"
 			]
-			, allowDrafts = false
-			, format      = "nestedArray"
-			, useCache    = false
 		);
 
 		var inheritedSearchEngineRules     = {};
@@ -53,7 +81,7 @@ component {
 
 			if ( page.search_engine_access=="inherit" ) {
 				if ( !structKeyExists( inheritedSearchEngineRules, page.parent_page ) ) {
-					pageSearchEngineRule = _getSearchEngineRulesForPage( page.id ).search_engine_access;
+					pageSearchEngineRule = _getSearchEngineRulesForPage( arguments.siteId, page.id ).search_engine_access;
 					inheritedSearchEngineRules[ page.parent_page ] = pageSearchEngineRule;
 				} else {
 					pageSearchEngineRule = inheritedSearchEngineRules[ page.parent_page ];
@@ -71,7 +99,7 @@ component {
 
 			if ( page.sitemap_priority=="inherit" ) {
 				if ( !structKeyExists( inheritedPageSitemapPriority, page.parent_page ) ) {
-					page.sitemap_priority = _getSitemapPriorityForPage( page.id );
+					page.sitemap_priority = _getSitemapPriorityForPage( arguments.siteId, page.id );
 					inheritedPageSitemapPriority[ page.parent_page ] = page.sitemap_priority;
 				} else {
 					page.sitemap_priority = inheritedPageSitemapPriority[ page.parent_page ];
@@ -80,7 +108,7 @@ component {
 
 			if ( page.sitemap_change_freq=="inherit" ) {
 				if ( !structKeyExists( inheritedPageSitemapChangeFreq, page.parent_page ) ) {
-					page.sitemap_change_freq = _getSitemapChangeFreqForPage( page.id );
+					page.sitemap_change_freq = _getSitemapChangeFreqForPage( arguments.siteId, page.id );
 					inheritedPageSitemapChangeFreq[ page.parent_page ] = page.sitemap_change_freq;
 				} else {
 					page.sitemap_change_freq = inheritedPageSitemapChangeFreq[ page.parent_page ];
@@ -88,12 +116,13 @@ component {
 			}
 
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
-				haveAccessPages.append( page );
+				haveAccessPages.append( _getSitemapAttributesForPage( arguments.siteId, page ) );
 			}
 
 			if ( page.hasChildren ) {
 				_addChildPages(
-					  haveAccessPages          = haveAccessPages
+					  siteId                   = arguments.siteId
+					, haveAccessPages          = haveAccessPages
 					, childPages               = page.children
 					, parentSearchEngineAccess = pageSearchEngineRule
 					, parentAccessRestriction  = pageAccessRestriction
@@ -103,61 +132,80 @@ component {
 			}
 		}
 
-		return _buildSitemapFile( pages=haveAccessPages, logger=arguments.logger, event=arguments.event );
+		$announceInterception( "postPrepareXmlSitemapPages", { siteId=arguments.siteId, pages=haveAccessPages, logger=arguments.logger ?: nullvalue() } );
+
+		return _buildSitemapFile( siteId=arguments.siteId, pages=haveAccessPages, logger=arguments.logger ?: nullvalue() );
 	}
 
-	private function _buildSitemapFile( required array pages, any logger, any event ) {
+	private function _buildSitemapFile( required string siteId, required array pages, any logger ) {
 		var counter     = 1;
-		var sitemap     = createObject( "java", "java.lang.StringBuilder" ).init();
+		var sitemap     = [];
 		var haveLogger  = arguments.keyExists( "logger" );
 		var canInfo     = haveLogger && arguments.logger.canInfo();
 		var canError    = haveLogger && arguments.logger.canError();
-		var siteRootUrl = arguments.event.getSiteUrl( arguments.event.getSite().id );
 		var newline     = chr( 10 ) & chr( 13 );
 		var loc         = "";
 		var lastmod     = "";
 		var priority    = "";
 		var changeFreq  = "";
+		var filename    = _getSitemapFilename( arguments.siteId );
 
-		if ( canInfo ) { arguments.logger.info( "Starting to rebuild XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
+		if ( canInfo ) { arguments.logger.info( "Starting to build XML sitemap for [#ArrayLen(arguments.pages)#] pages" ); }
 
 		sitemap.append( '<?xml version="1.0" encoding="UTF-8"?>' );
-		sitemap.append( newline & '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
+		sitemap.append( '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' );
 
 		for ( var page in arguments.pages ) {
-			loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
-			lastmod    = DateFormat( page.datemodified, "yyyy-mm-dd" );
-			priority   = _getPriorityRange( page.sitemap_priority ?: "" );
-			changeFreq = Len( page.sitemap_change_freq ?: "" ) ? page.sitemap_change_freq : "always";
+			loc        = page.loc;
+			lastmod    = DateFormat( page.lastmod, "yyyy-mm-dd" );
+			priority   = _getPriorityRange( page.priority ?: "" );
+			changeFreq = Len( page.changeFreq ?: "" ) ? page.changeFreq : "always";
 
-			sitemap.append( newline & "  <url>" );
-			sitemap.append( newline & "    <loc>#xmlFormat( loc )#</loc>" );
-			sitemap.append( newline & "    <lastmod>#lastmod#</lastmod>" );
-			sitemap.append( newline & "    <changefreq>#changeFreq#</changefreq>" );
-			sitemap.append( newline & "    <priority>#priority#</priority>" );
-			sitemap.append( newline & "  </url>" );
+			sitemap.append( "  <url>" );
+			sitemap.append( "    <loc>#xmlFormat( loc )#</loc>" );
+			sitemap.append( "    <lastmod>#lastmod#</lastmod>" );
+			sitemap.append( "    <changefreq>#changeFreq#</changefreq>" );
+			sitemap.append( "    <priority>#priority#</priority>" );
+			sitemap.append( "  </url>" );
 
 			counter++;
-			if ( counter % 100 == 0 ) {
-				if ( canInfo ) { arguments.logger.info( "Processed 100 pages..." ); }
+			if ( counter % 100 == 0 || counter == arguments.pages.len() ) {
+				if ( canInfo ) { arguments.logger.info( "Processed #counter# pages..." ); }
 			}
 		}
 
-		sitemap.append( newline & "</urlset>" );
+		sitemap.append( "</urlset>" );
 
 		try {
-			FileWrite( expandPath( "/sitemap.xml" ), sitemap.toString() );
+			FileWrite( expandPath( "/" & filename ), sitemap.toList( newline ) );
 		} catch ( e ) {
-			if ( canError ) { arguments.logger.error( "There's a problem creating sitemap.xml file. Message [#e.message#], details: [#e.detail#]."); }
+			if ( canError ) { arguments.logger.error( "There's a problem creating #filename# file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
 		}
 
-		if ( canInfo ) { arguments.logger.info( "Successfully created sitemap.xml." ); }
+		if ( canInfo ) { arguments.logger.info( "Successfully created #filename#." ); }
 		return true;
 	}
 
-	private struct function _getSearchEngineRulesForPage( required string pageId ) {
-		var page = _getSiteTreeService().getPage( id=arguments.pageId, selectFields=[ "id", "parent_page", "search_engine_access" ] );
+	private struct function _getSitemapAttributesForPage( required string siteId, required struct page ) {
+		var result        = {};
+		var event         = $getRequestContext();
+		var siteRootUrl   = event.getSiteUrl( arguments.siteId );
+
+		result.loc        = siteRootUrl.reReplace( "/$", "" ) & page._hierarchy_slug.reReplace( "(.)/$", "\1.html" );
+		result.lastmod    = page.datemodified;
+		result.priority   = page.sitemap_priority ?: "";
+		result.changeFreq = page.sitemap_change_freq ?: "";
+
+		return result;
+	}
+
+	private struct function _getSearchEngineRulesForPage( required string siteId, required string pageId ) {
+		var page = _getSiteTreeService().getPage(
+			  site         = arguments.siteId
+			, id           = arguments.pageId
+			, selectFields = [ "id", "parent_page", "search_engine_access" ]
+		);
 
 		if ( !page.recordCount ) {
 			return {
@@ -166,7 +214,7 @@ component {
 		}
 		if ( !Len( Trim( page.search_engine_access ?: "" ) ) || page.search_engine_access == "inherit"   ) {
 			if ( Len( Trim( page.parent_page ) ) ) {
-				return _getSearchEngineRulesForPage( page.parent_page );
+				return _getSearchEngineRulesForPage( arguments.siteId, page.parent_page );
 			} else {
 				return {
 					search_engine_access = "allow"
@@ -179,15 +227,19 @@ component {
 		};
 	}
 
-	private string function _getSitemapPriorityForPage( required string pageId ) {
-		var page = _getSiteTreeService().getPage( id=arguments.pageId, selectFields=[ "id", "parent_page", "sitemap_priority" ] );
+	private string function _getSitemapPriorityForPage( required string siteId, required string pageId ) {
+		var page = _getSiteTreeService().getPage(
+			  site         = arguments.siteId
+			, id           = arguments.pageId
+			, selectFields = [ "id", "parent_page", "sitemap_priority" ]
+		);
 
 		if ( !page.recordCount ) {
 			return "normal";
 		}
 		if ( !Len( Trim( page.sitemap_priority ?: "" ) ) || page.sitemap_priority == "inherit"   ) {
 			if ( Len( Trim( page.parent_page ) ) ) {
-				return _getSitemapPriorityForPage( page.parent_page );
+				return _getSitemapPriorityForPage( arguments.siteId, page.parent_page );
 			} else {
 				return "normal";
 			}
@@ -196,15 +248,19 @@ component {
 		return page.sitemap_priority;
 	}
 
-	private string function _getSitemapChangeFreqForPage( required string pageId ) {
-		var page = _getSiteTreeService().getPage( id=arguments.pageId, selectFields=[ "id", "parent_page", "sitemap_change_freq" ] );
+	private string function _getSitemapChangeFreqForPage( required string siteId, required string pageId ) {
+		var page = _getSiteTreeService().getPage(
+			  site         = arguments.siteId
+			, id           = arguments.pageId
+			, selectFields = [ "id", "parent_page", "sitemap_change_freq" ]
+		);
 
 		if ( !page.recordCount ) {
 			return "always";
 		}
 		if ( !Len( Trim( page.sitemap_change_freq ?: "" ) ) || page.sitemap_change_freq == "inherit"   ) {
 			if ( Len( Trim( page.parent_page ) ) ) {
-				return _getSitemapChangeFreqForPage( page.parent_page );
+				return _getSitemapChangeFreqForPage( arguments.siteId, page.parent_page );
 			} else {
 				return "always";
 			}
@@ -213,25 +269,34 @@ component {
 		return page.sitemap_change_freq;
 	}
 
-	private function _addChildPages( required array haveAccessPages, required array childPages, string parentSearchEngineAccess, string parentAccessRestriction, string parentSitemapPriority, string parentSitemapChangeFreq ) {
+	private function _addChildPages(
+		  required string siteId
+		, required array  haveAccessPages
+		, required array  childPages
+		,          string parentSearchEngineAccess
+		,          string parentAccessRestriction
+		,          string parentSitemapPriority
+		,          string parentSitemapChangeFreq
+	) {
 		var livePage              = false;
 		var pageSearchEngineRule  = "";
 		var pageAccessRestriction = "";
 
 		for( var childPage in arguments.childPages ) {
 			livePage                      = _checkLivePage( active=childPage.active, trashed=childPage.trashed, exclude_from_sitemap=childPage.exclude_from_sitemap, embargo_date=childPage.embargo_date, expiry_date=childPage.expiry_date );
-			pageSearchEngineRule          = childPage.search_engine_access EQ "inherit" ? arguments.parentSearchEngineAccess : childPage.search_engine_access;
-			pageAccessRestriction         = childPage.access_restriction   EQ "inherit" ? arguments.parentAccessRestriction  : childPage.access_restriction;
-			childPage.sitemap_priority    = childPage.sitemap_priority     EQ "inherit" ? arguments.parentSitemapPriority    : childPage.sitemap_priority;
-			childPage.sitemap_change_freq = childPage.sitemap_change_freq  EQ "inherit" ? arguments.parentSitemapChangeFreq  : childPage.sitemap_change_freq;
+			pageSearchEngineRule          = childPage.search_engine_access == "inherit" ? arguments.parentSearchEngineAccess : childPage.search_engine_access;
+			pageAccessRestriction         = childPage.access_restriction   == "inherit" ? arguments.parentAccessRestriction  : childPage.access_restriction;
+			childPage.sitemap_priority    = childPage.sitemap_priority     == "inherit" ? arguments.parentSitemapPriority    : childPage.sitemap_priority;
+			childPage.sitemap_change_freq = childPage.sitemap_change_freq  == "inherit" ? arguments.parentSitemapChangeFreq  : childPage.sitemap_change_freq;
 
 			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
-				arguments.haveAccessPages.append( childPage );
+				arguments.haveAccessPages.append( _getSitemapAttributesForPage( arguments.siteId, childPage ) );
 			}
 
 			if ( childPage.hasChildren ) {
 				_addChildPages(
-					  haveAccessPages          = arguments.haveAccessPages
+					  siteId                   = arguments.siteId
+					, haveAccessPages          = arguments.haveAccessPages
 					, childPages               = childPage.children
 					, parentSearchEngineAccess = pageSearchEngineRule
 					, parentAccessRestriction  = pageAccessRestriction
@@ -286,7 +351,22 @@ component {
 		return "0.5";
 	}
 
+	private string function _getSitemapFilename( required string siteId ) {
+		var site = _getSiteService().getSite( arguments.siteId );
+		if ( len( site.sitemap_suffix ) ) {
+			return "sitemap-#site.sitemap_suffix#.xml";
+		}
+
+		return "sitemap.xml";
+	}
+
 // GETTERS AND SETTERS
+	private any function _getSiteService() {
+		return _siteService;
+	}
+	private void function _setSiteService( required any siteService ) {
+		_siteService = arguments.siteService;
+	}
 
 	private any function _getSiteTreeService() {
 		return _siteTreeService;
