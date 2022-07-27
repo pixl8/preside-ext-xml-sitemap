@@ -2,6 +2,7 @@
 
 ## v1.2.1
 
+* Convert to github build system
 * Add German i18n translations
 
 ## v1.2.0

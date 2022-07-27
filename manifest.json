@@ -1,6 +1,6 @@
 {
 	  "id"      : "preside-ext-xml-sitemap"
 	, "title"   : "XML Sitemap for Preside"
-	, "author"  : "Pixl8 Interactive"
-	, "version" : "VERSION_NUMBER"
+	, "author"  : "Pixl8 Group"
+	, "version" : "$VERSION_NUMBER"
 }
