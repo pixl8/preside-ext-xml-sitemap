@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1
+
+* Add German i18n translations
+
 ## v1.2.0
 
 * Change build/publish process
