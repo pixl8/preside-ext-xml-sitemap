@@ -177,7 +177,9 @@ component {
 		sitemap.append( "</urlset>" );
 
 		try {
-			FileWrite( expandPath( "/" & filename ), sitemap.toList( newline ) );
+			var content = sitemap.toList( newline );
+			FileWrite( expandPath( "/" & filename ), content );
+			$announceInterception( "postWriteXmlSitemapFile", { filename="/#filename#" ), content=content } );
 		} catch ( e ) {
 			if ( canError ) { arguments.logger.error( "There's a problem creating #filename# file. Message [#e.message#], details: [#e.detail#]."); }
 			return false;
