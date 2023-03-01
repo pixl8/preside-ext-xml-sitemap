@@ -15,6 +15,7 @@ component {
 		settings.enum.sitemapChangeFreq = [ "inherit", "always", "hourly", "daily", "weekly", "monthly", "yearly", "never" ];
 
 		interceptorSettings.customInterceptionPoints.append( "postPrepareXmlSitemapPages" );
+		interceptorSettings.customInterceptionPoints.append( "postWriteXmlSitemapFile" );
 	}
 
 }
