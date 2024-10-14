@@ -115,7 +115,7 @@ component {
 				}
 			}
 
-			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
+			if ( pageSearchEngineRule=="allow" && pageAccessRestriction!="full" && livePage ) {
 				haveAccessPages.append( _getSitemapAttributesForPage( arguments.siteId, page ) );
 			}
 
@@ -291,7 +291,7 @@ component {
 			childPage.sitemap_priority    = childPage.sitemap_priority     == "inherit" ? arguments.parentSitemapPriority    : childPage.sitemap_priority;
 			childPage.sitemap_change_freq = childPage.sitemap_change_freq  == "inherit" ? arguments.parentSitemapChangeFreq  : childPage.sitemap_change_freq;
 
-			if ( pageSearchEngineRule=="allow" && pageAccessRestriction=="none" && livePage ) {
+			if ( pageSearchEngineRule=="allow" && pageAccessRestriction!="full" && livePage ) {
 				arguments.haveAccessPages.append( _getSitemapAttributesForPage( arguments.siteId, childPage ) );
 			}
 
