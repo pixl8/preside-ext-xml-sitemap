@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.3
+
+* Include partially restricted pages in sitemap
+
 ## v1.2.2
 
 * [#13](https://github.com/pixl8/preside-ext-xml-sitemap/issues/13) - Announce interception point after writing to file
