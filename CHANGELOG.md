@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.5
+
+* Apply translation manager CI action
+
 ## v1.2.3
 
 * Include partially restricted pages in sitemap
