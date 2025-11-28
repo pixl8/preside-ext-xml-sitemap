@@ -1,5 +1,9 @@
 component extends="preside.system.services.siteTree.SiteTreeService" {
 
+	variables._cache = {};
+
+	property name="sitemapExcludedPageTypes" inject="coldbox:setting:sitemap.excludedPageTypes";
+
 	public any function getPagesForSiteMap(
 		  required string  siteId
 		,          boolean trash        = false
@@ -50,6 +54,15 @@ component extends="preside.system.services.siteTree.SiteTreeService" {
 			args.filterParams._hierarchy_depth = maxDepth;
 		}
 
+		var excludedPageTypes = getExcludedPageTypesForSiteMap();
+		if ( ArrayLen( excludedPageTypes ) ) {
+			args.extraFilters = args.extraFilters ?: [];
+
+			ArrayAppend( args.extraFilters, {
+				  filter       = "page.page_type NOT IN (:excludedPageTypes)"
+				, filterParams = { excludedPageTypes={ type="cf_sql_varchar", value=ArrayToList( excludedPageTypes ), list=true } }
+			} );
+		}
 
 		tree = _getPObj().selectData( argumentCollection=args );
 
@@ -61,5 +74,32 @@ component extends="preside.system.services.siteTree.SiteTreeService" {
 		}
 
 		return tree;
+	}
+
+	public array function getExcludedPageTypesForSiteMap() {
+		return _localCache( "getExcludedPageTypesForSiteMap", function() {
+			var excludedPageTypes = sitemapExcludedPageTypes;
+			var allPageTypes      = _getPageTypesService().listSiteTreePageTypes();
+			var poService         = _getPresideObjectService();
+
+			for ( var pageType in allPageTypes ) {
+				var shouldExclude = $helpers.isTrue( poService.getObjectAttribute( objectName=pageType, attributeName="excludedFromSiteMap" ) );
+
+				if ( shouldExclude ) {
+					ArrayAppend( excludedPageTypes, pageType );
+				}
+			}
+
+			return excludedPageTypes;
+		} );
+	}
+
+// PRIVATE HELPERs
+	private any function _localCache( required string cacheKey, required any generator ) {
+		if ( !StructKeyExists( _cache, arguments.cacheKey ) ) {
+			_cache[ arguments.cacheKey ] = generator();
+		}
+
+		return _cache[ arguments.cacheKey ];
 	}
 }

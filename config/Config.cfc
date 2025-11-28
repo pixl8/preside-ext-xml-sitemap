@@ -16,6 +16,14 @@ component {
 
 		interceptorSettings.customInterceptionPoints.append( "postPrepareXmlSitemapPages" );
 		interceptorSettings.customInterceptionPoints.append( "postWriteXmlSitemapFile" );
+
+		settings.sitemap                   = settings.sitemap                   ?: {};
+		settings.sitemap.excludedPageTypes = settings.sitemap.excludedPageTypes ?: [];
+		ArrayAppend( settings.sitemap.excludedPageTypes, [
+			  "accessDenied"
+			, "server_error"
+			, "notFound"
+		], true );
 	}
 
 }
