@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.6
+
+* Sitemap.xml includes pages which shouldn't be indexed
+
 ## v1.2.5
 
 * Apply translation manager CI action
